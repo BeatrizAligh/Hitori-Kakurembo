@@ -7,6 +7,36 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Guadua
+    second: {fileID: 2100000, guid: 48ab6964ce444a74fa868a29d86c7427, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Malla
+    second: {fileID: 2100000, guid: 948947c4aa7abf145b28c252e29aa63a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Plastic
+    second: {fileID: 2100000, guid: d761bf9ed3701fe4cbbedeee8e3b5031, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: RiceDusk
+    second: {fileID: 2100000, guid: 90b8d209c8008824a9f5cd280bc232c9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: TransparentPlastic
+    second: {fileID: 2100000, guid: 3774ed7c46dda864b8b3ef2ab1b1c6fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: concrete_pavers_03
+    second: {fileID: 2100000, guid: 626e452045305a840854fbe5337c843a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: damaged_concrete_floor_03
     second: {fileID: 2100000, guid: ce4bd102f9e415f4b9191ebc6bbd40da, type: 2}
   - first:
@@ -22,6 +52,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: plaster_stone_wall_02
+    second: {fileID: 2100000, guid: a522e9ce1c5bafb4081d8224956a7785, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: red_brick
     second: {fileID: 2100000, guid: cd550dd6ed5e7cd45a699dc9e58fd1fe, type: 2}
   - first:
@@ -32,8 +67,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: rusty_painted_metal
+    second: {fileID: 2100000, guid: 84eb277c859c5114d8f5b3fa0d9b7bb2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: white_plaster_02
     second: {fileID: 2100000, guid: 12d57ca0a66496846bd175a33499636c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: wood_shutter
+    second: {fileID: 2100000, guid: 94748893385f2994391f4f49e4d54e89, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
