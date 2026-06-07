@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5f245f896176c8142bea5666a89372dc
+ShaderIncludeImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 211534
+  packageName: Beech Forest Ecosystem
+  packageVersion: 1.0.0
+  assetPath: Assets/ScansLibrary/Beech Forest Ecosystem/ShaderGraphs/CustomFunctions/Foliage_CustomLighting.hlsl
+  uploadId: 482252

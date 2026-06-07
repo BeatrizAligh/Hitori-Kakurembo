@@ -103,7 +103,8 @@ ModelImporter:
     animationScaleError: 0.5
     animationWrapMode: 0
     extraExposedTransformPaths: []
-    extraUserProperties: []
+    extraUserProperties:
+    - '#BAKERY{"meshName":["Cube.019","Cube.014","Plane.001","Cube.051","Plane.013","Cube.059","Cube.012","Cube.001","Cube.018","Cube.023","Plane.003","Cube.060","Cube.009","Cube.008","Cube.003","Cube.050","Plane.010","Cube.002","Cube.016","Plane.009","Cube.026","Cube.029","Plane.012","Plane.005","Cube.054","Cube.020","Cube.022","Cube.021","Cube.017","Cube.055","Plane.011","Cube.013","Plane.008","Cube.025","Cube.027","Plane.007","Cube.024","Cube.004","Cube.015","Cube.005","Cube.056","Cube.007","Cube.006","Cube.052","Cube","Cube.053","Plane.004","Plane.006"],"padding":[25,9,19,12,29,21,5,18,12,21,49,9,31,23,18,55,63,18,10,63,129,129,63,51,55,34,131,28,12,23,63,10,55,131,28,50,4,14,13,16,10,15,16,25,14,18,29,16],"unwrapper":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}'
     clipAnimations: []
     isReadable: 0
   meshes:

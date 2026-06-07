@@ -105,3 +105,8 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+/Assets/Bakery
+/Assets/Editor/x64/Bakery
+/Assets/Scripts/Plugins/Bakery
+Assets/Settings/BakeryProjectSettings.asset
+Assets/Settings/BakeryProjectSettings.asset.meta
