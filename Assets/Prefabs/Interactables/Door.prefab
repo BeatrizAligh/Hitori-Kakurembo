@@ -1,5 +1,112 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &806515676490779947
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5935683768126203417}
+  - component: {fileID: 4831204970677633805}
+  - component: {fileID: 6837535157248912916}
+  - component: {fileID: 4007527844411095874}
+  m_Layer: 0
+  m_Name: DoorZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5935683768126203417
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806515676490779947}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 247105929371194264}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4831204970677633805
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806515676490779947}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.4003072, y: 2.0496697, z: 1.0095906}
+  m_Center: {x: 0, y: 0.9974539, z: 0}
+--- !u!114 &6837535157248912916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806515676490779947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &4007527844411095874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806515676490779947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb80790041b0a464f9d04679f01be482, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractableState
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerTag: Player
+  useTransformAnimation: 1
+  animatedTransform: {fileID: 9032723482503581162}
+  animatePosition: 0
+  openPosition: {x: -0.11917567, y: -1.0787772, z: -0.004864547}
+  closedPosition: {x: -0.11917567, y: -1.0787772, z: -0.004864547}
+  animateRotation: 1
+  openRotation: {x: -0, y: 89.65593, z: -0}
+  closedRotation: {x: -0, y: 0, z: 0}
+  animationDuration: 1
+  useColliderToggle: 1
+  toggledCollider: {fileID: 8954105805238759430}
+  useLightToggle: 0
+  toggledLight: {fileID: 0}
 --- !u!1 &3911359252207812918
 GameObject:
   m_ObjectHideFlags: 0
@@ -84,6 +191,7 @@ Transform:
   m_Children:
   - {fileID: 3222510809579927397}
   - {fileID: 3831296346812924476}
+  - {fileID: 5935683768126203417}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &3112570068767297678
@@ -182,5 +290,10 @@ PrefabInstance:
 --- !u!4 &3222510809579927397 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f7e899b39cc5b534b9f0690ddcb4cadc, type: 3}
+  m_PrefabInstance: {fileID: 3112570068767297678}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9032723482503581162 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6226437431748975972, guid: f7e899b39cc5b534b9f0690ddcb4cadc, type: 3}
   m_PrefabInstance: {fileID: 3112570068767297678}
   m_PrefabAsset: {fileID: 0}
