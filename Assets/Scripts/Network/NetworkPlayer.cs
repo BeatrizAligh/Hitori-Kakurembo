@@ -24,6 +24,11 @@ namespace HitoriKakurembo.Network
         private PlayerController playerController;
 
         /// <summary>
+        /// Referencia cacheada al controlador visual que instancia el modelo artistico seleccionado.
+        /// </summary>
+        private PlayerVisualModelController visualModelController;
+
+        /// <summary>
         /// Referencia cacheada al transform de red para publicar teleports cuando el owner aplica una correccion fuerte.
         /// </summary>
         private NetworkTransform networkTransform;
@@ -85,6 +90,15 @@ namespace HitoriKakurembo.Network
             NetworkVariableWritePermission.Server);
 
         /// <summary>
+        /// Indice sincronizado del modelo visual elegido por el jugador en el lobby.
+        /// El servidor lo valida y todos los clientes lo usan para instanciar el mismo personaje.
+        /// </summary>
+        private readonly NetworkVariable<int> selectedCharacterModelIndex = new NetworkVariable<int>(
+            PlayerCharacterModelCatalog.DefaultModelIndex,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+
+        /// <summary>
         /// Puntuacion sincronizada acumulada del jugador.
         /// </summary>
         private readonly NetworkVariable<int> currentScore = new NetworkVariable<int>(
@@ -141,6 +155,12 @@ namespace HitoriKakurembo.Network
         public PlayerRoleType CurrentRole => currentRole.Value;
 
         /// <summary>
+        /// Obtiene el indice del modelo visual elegido por el jugador en lobby.
+        /// Si el jugador es muneco, el controlador visual puede forzar el modelo de muneco sin cambiar este valor elegido.
+        /// </summary>
+        public int SelectedCharacterModelIndex => selectedCharacterModelIndex.Value;
+
+        /// <summary>
         /// Obtiene la puntuacion sincronizada actual del jugador.
         /// </summary>
         public int CurrentScore => currentScore.Value;
@@ -157,6 +177,7 @@ namespace HitoriKakurembo.Network
         {
             roleHandler = GetComponent<PlayerRoleHandler>();
             playerController = GetComponent<PlayerController>();
+            visualModelController = GetComponent<PlayerVisualModelController>();
             networkTransform = GetComponent<NetworkTransform>();
             NetworkGameManager networkGameManager = FindAnyObjectByType<NetworkGameManager>();
             networkGameManager?.RegisterPlayer(this);
@@ -168,6 +189,7 @@ namespace HitoriKakurembo.Network
                 SetPlayerName(relaySessionManager?.GetApprovedPlayerName(OwnerClientId));
                 SetReadyState(relaySessionManager?.GetLobbyReadyStateForClient(OwnerClientId, false) ?? false);
                 SetAliveState(true);
+                SetCharacterModelIndex(selectedCharacterModelIndex.Value);
                 ResetCurrentRoundScore();
                 networkGameManager?.ReindexConnectedPlayers();
             }
@@ -176,8 +198,10 @@ namespace HitoriKakurembo.Network
             isDoll.OnValueChanged += HandleDollStateChanged;
             isAlive.OnValueChanged += HandleAliveStateChanged;
             currentRole.OnValueChanged += HandleRoleChanged;
+            selectedCharacterModelIndex.OnValueChanged += HandleCharacterModelIndexChanged;
             currentRoundScore.OnValueChanged += HandleRoundScoreChanged;
             ApplyRoleStateToComponents();
+            ApplyVisualStateToComponents();
         }
 
         /// <summary>
@@ -189,6 +213,7 @@ namespace HitoriKakurembo.Network
             isDoll.OnValueChanged -= HandleDollStateChanged;
             isAlive.OnValueChanged -= HandleAliveStateChanged;
             currentRole.OnValueChanged -= HandleRoleChanged;
+            selectedCharacterModelIndex.OnValueChanged -= HandleCharacterModelIndexChanged;
             currentRoundScore.OnValueChanged -= HandleRoundScoreChanged;
             FindAnyObjectByType<NetworkGameManager>()?.UnregisterPlayer(this);
         }
@@ -310,6 +335,44 @@ namespace HitoriKakurembo.Network
         }
 
         /// <summary>
+        /// Solicita desde el propietario local cambiar el modelo visual elegido en el lobby.
+        /// El cliente solo pide el cambio; el servidor valida que el lobby siga abierto y replica el indice final.
+        /// </summary>
+        /// <param name="modelIndex">
+        /// Indice solicitado dentro de <see cref="PlayerCharacterModelCatalog"/>.
+        /// </param>
+        public void SubmitCharacterModelIndex(int modelIndex)
+        {
+            int safeModelIndex = PlayerCharacterModelCatalog.NormalizeIndex(modelIndex);
+
+            if (IsServer)
+            {
+                TryApplyCharacterModelIndexOnServer(safeModelIndex);
+                return;
+            }
+
+            SubmitCharacterModelIndexServerRpc(safeModelIndex);
+        }
+
+        /// <summary>
+        /// Actualiza en el servidor el modelo visual elegido por el jugador.
+        /// No asigna el modelo de muneco; ese cambio visual depende de <see cref="IsDoll"/>.
+        /// </summary>
+        /// <param name="modelIndex">
+        /// Indice validado del modelo elegido.
+        /// </param>
+        public void SetCharacterModelIndex(int modelIndex)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            selectedCharacterModelIndex.Value = PlayerCharacterModelCatalog.NormalizeIndex(modelIndex);
+            NotifyLobbyStateChangedOnServer();
+        }
+
+        /// <summary>
         /// Agrega puntos a la puntuacion del jugador en el servidor.
         /// </summary>
         /// <param name="amount">
@@ -401,6 +464,18 @@ namespace HitoriKakurembo.Network
         }
 
         /// <summary>
+        /// RPC enviado por el propietario para pedir al servidor un cambio de modelo visual en lobby.
+        /// </summary>
+        /// <param name="modelIndex">
+        /// Indice solicitado por el cliente propietario.
+        /// </param>
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitCharacterModelIndexServerRpc(int modelIndex)
+        {
+            TryApplyCharacterModelIndexOnServer(modelIndex);
+        }
+
+        /// <summary>
         /// RPC enviado al owner para corregir su posicion local aunque el transform sea owner-authoritative.
         /// </summary>
         /// <param name="position">
@@ -444,6 +519,24 @@ namespace HitoriKakurembo.Network
             }
 
             SetReadyState(value);
+        }
+
+        /// <summary>
+        /// Valida que la seleccion de modelo ocurra dentro del lobby abierto y aplica el valor en servidor.
+        /// </summary>
+        /// <param name="modelIndex">
+        /// Indice solicitado por el jugador propietario.
+        /// </param>
+        private void TryApplyCharacterModelIndexOnServer(int modelIndex)
+        {
+            RelaySessionManager relaySessionManager = ServiceLocator.Resolve<RelaySessionManager>() ?? FindAnyObjectByType<RelaySessionManager>();
+
+            if (relaySessionManager != null && !relaySessionManager.CanChangeReadyStateOnServer())
+            {
+                return;
+            }
+
+            SetCharacterModelIndex(modelIndex);
         }
 
         /// <summary>
@@ -508,6 +601,7 @@ namespace HitoriKakurembo.Network
         private void HandleDollStateChanged(bool previousValue, bool newValue)
         {
             ApplyRoleStateToComponents();
+            ApplyVisualStateToComponents();
         }
 
         /// <summary>
@@ -536,6 +630,21 @@ namespace HitoriKakurembo.Network
         private void HandleRoleChanged(PlayerRoleType previousValue, PlayerRoleType newValue)
         {
             ApplyRoleStateToComponents();
+        }
+
+        /// <summary>
+        /// Reaplica el modelo visual cuando el jugador cambia su seleccion desde el lobby.
+        /// </summary>
+        /// <param name="previousValue">
+        /// Indice visual anterior.
+        /// </param>
+        /// <param name="newValue">
+        /// Nuevo indice visual sincronizado.
+        /// </param>
+        private void HandleCharacterModelIndexChanged(int previousValue, int newValue)
+        {
+            ApplyVisualStateToComponents();
+            NotifyLobbyStateChangedOnServer();
         }
 
         /// <summary>
@@ -569,6 +678,15 @@ namespace HitoriKakurembo.Network
             }
 
             roleHandler.AssignRole(CurrentRole, false);
+        }
+
+        /// <summary>
+        /// Sincroniza el controlador visual local con la seleccion de personaje y el estado actual de muneco.
+        /// </summary>
+        private void ApplyVisualStateToComponents()
+        {
+            visualModelController = visualModelController != null ? visualModelController : GetComponent<PlayerVisualModelController>();
+            visualModelController?.ApplyVisualModel(SelectedCharacterModelIndex, IsDoll);
         }
     }
 }

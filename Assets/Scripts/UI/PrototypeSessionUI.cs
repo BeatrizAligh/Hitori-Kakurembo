@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using HitoriKakurembo.House;
 using HitoriKakurembo.Network;
+using HitoriKakurembo.Player;
 using HitoriKakurembo.Rounds;
 using HitoriKakurembo.Seals;
 using UnityEngine;
@@ -94,6 +95,21 @@ namespace HitoriKakurembo.UI
         /// Texto que resume cuantos jugadores estan listos y el rango permitido de la sala.
         /// </summary>
         private Text readinessText;
+
+        /// <summary>
+        /// Texto que muestra el modelo de personaje elegido por el jugador local en el lobby.
+        /// </summary>
+        private Text characterModelText;
+
+        /// <summary>
+        /// Boton para retroceder en la lista de modelos visuales disponibles.
+        /// </summary>
+        private Button previousCharacterModelButton;
+
+        /// <summary>
+        /// Boton para avanzar en la lista de modelos visuales disponibles.
+        /// </summary>
+        private Button nextCharacterModelButton;
 
         /// <summary>
         /// Texto que describe el estado actual de la ronda cuando ya se esta dentro de la escena de juego.
@@ -306,6 +322,14 @@ namespace HitoriKakurembo.UI
             readinessText = RuntimeUIFactory.CreateText("ReadinessText", card, string.Empty, 18, TextAnchor.MiddleCenter, new Color(0.78f, 0.84f, 0.9f, 1f));
             playerListText = RuntimeUIFactory.CreateText("PlayerListText", card, string.Empty, 18, TextAnchor.UpperLeft, new Color(0.86f, 0.9f, 0.94f, 1f));
 
+            RuntimeUIFactory.CreateSpacer(card, 4f);
+            RuntimeUIFactory.CreateText("CharacterModelTitle", card, "Modelo de personaje", 18, TextAnchor.MiddleCenter, new Color(0.96f, 0.88f, 0.56f, 1f));
+            characterModelText = RuntimeUIFactory.CreateText("CharacterModelText", card, string.Empty, 18, TextAnchor.MiddleCenter, new Color(0.86f, 0.9f, 0.94f, 1f));
+            previousCharacterModelButton = RuntimeUIFactory.CreateButton("PreviousCharacterModelButton", card, "Modelo anterior");
+            previousCharacterModelButton.onClick.AddListener(HandlePreviousCharacterModelClicked);
+            nextCharacterModelButton = RuntimeUIFactory.CreateButton("NextCharacterModelButton", card, "Modelo siguiente");
+            nextCharacterModelButton.onClick.AddListener(HandleNextCharacterModelClicked);
+
             readyButton = RuntimeUIFactory.CreateButton("ReadyButton", card, "Estoy listo");
             readyButton.onClick.AddListener(HandleReadyClicked);
 
@@ -405,6 +429,8 @@ namespace HitoriKakurembo.UI
         /// </summary>
         private void RefreshLobbyState()
         {
+            NetworkPlayer localPlayer = relaySessionManager.GetLocalPlayer();
+
             if (lobbyCodeText != null)
             {
                 string displayedCode = string.IsNullOrWhiteSpace(relaySessionManager.JoinCode)
@@ -426,6 +452,25 @@ namespace HitoriKakurembo.UI
             if (readinessText != null)
             {
                 readinessText.text = relaySessionManager.GetLobbyReadinessSummary();
+            }
+
+            if (characterModelText != null)
+            {
+                characterModelText.text = localPlayer == null
+                    ? "Modelo: esperando jugador local..."
+                    : $"Modelo actual: {PlayerCharacterModelCatalog.GetDisplayName(localPlayer.SelectedCharacterModelIndex)}";
+            }
+
+            bool canChangeCharacterModel = localPlayer != null && relaySessionManager.CanToggleLocalReady();
+
+            if (previousCharacterModelButton != null)
+            {
+                previousCharacterModelButton.interactable = canChangeCharacterModel;
+            }
+
+            if (nextCharacterModelButton != null)
+            {
+                nextCharacterModelButton.interactable = canChangeCharacterModel;
             }
 
             if (readyButton != null)
@@ -804,6 +849,46 @@ namespace HitoriKakurembo.UI
         }
 
         /// <summary>
+        /// Pide seleccionar el modelo anterior disponible para el jugador local.
+        /// </summary>
+        private void HandlePreviousCharacterModelClicked()
+        {
+            ChangeLocalCharacterModel(-1);
+        }
+
+        /// <summary>
+        /// Pide seleccionar el siguiente modelo disponible para el jugador local.
+        /// </summary>
+        private void HandleNextCharacterModelClicked()
+        {
+            ChangeLocalCharacterModel(1);
+        }
+
+        /// <summary>
+        /// Calcula un nuevo indice de modelo y lo envia al <see cref="NetworkPlayer"/> local para que el servidor lo replique.
+        /// </summary>
+        /// <param name="direction">
+        /// Direccion de cambio: positivo avanza, negativo retrocede.
+        /// </param>
+        private void ChangeLocalCharacterModel(int direction)
+        {
+            if (relaySessionManager == null)
+            {
+                return;
+            }
+
+            NetworkPlayer localPlayer = relaySessionManager.GetLocalPlayer();
+
+            if (localPlayer == null)
+            {
+                return;
+            }
+
+            int nextModelIndex = PlayerCharacterModelCatalog.GetWrappedIndex(localPlayer.SelectedCharacterModelIndex, direction);
+            localPlayer.SubmitCharacterModelIndex(nextModelIndex);
+        }
+
+        /// <summary>
         /// Solicita abandonar la sesion actual y volver al menu principal.
         /// </summary>
         private void HandleLeaveSessionClicked()
@@ -827,6 +912,9 @@ namespace HitoriKakurembo.UI
             playerCountText = null;
             playerListText = null;
             readinessText = null;
+            characterModelText = null;
+            previousCharacterModelButton = null;
+            nextCharacterModelButton = null;
             roundStateText = null;
             sealStateText = null;
             localPlayerStateText = null;

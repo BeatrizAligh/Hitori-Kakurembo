@@ -319,6 +319,20 @@ namespace HitoriKakurembo.Player
         }
 
         /// <summary>
+        /// Recalcula los renderers locales que deben ocultarse en primera persona.
+        /// Debe llamarse cuando otro sistema cambia el modelo visual del jugador mientras la camara local esta activa.
+        /// </summary>
+        public void RefreshLocalBodyVisibility()
+        {
+            localRenderers = GetComponentsInChildren<Renderer>(true);
+
+            if (cameraRigCreated)
+            {
+                SetLocalBodyVisibility(false);
+            }
+        }
+
+        /// <summary>
         /// Oculta o muestra los renderers locales del jugador sin afectar como otros clientes ven esta capsula.
         /// </summary>
         /// <param name="isVisible">

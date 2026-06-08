@@ -3,6 +3,9 @@ using HitoriKakurembo.Player;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace HitoriKakurembo.Network
 {
@@ -17,6 +20,11 @@ namespace HitoriKakurembo.Network
         private const string RuntimePlayerPrefabName = "RuntimeNetworkPlayerPrefab";
 
         /// <summary>
+        /// Ruta del prefab autorado de jugador. Si existe, se usa como plantilla visual y de componentes para el prototipo multiplayer.
+        /// </summary>
+        private const string AuthoredPlayerPrefabPath = "Assets/Prefabs/Players/NetworkPlayer.prefab";
+
+        /// <summary>
         /// Crea una plantilla de jugador de red completamente funcional para NGO.
         /// </summary>
         /// <returns>
@@ -24,6 +32,13 @@ namespace HitoriKakurembo.Network
         /// </returns>
         public static GameObject CreatePlayerPrefab()
         {
+            GameObject authoredPrefabTemplate = TryCreateAuthoredPlayerPrefabTemplate();
+
+            if (authoredPrefabTemplate != null)
+            {
+                return authoredPrefabTemplate;
+            }
+
             GameObject playerPrefab = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             playerPrefab.name = RuntimePlayerPrefabName;
             playerPrefab.SetActive(false);
@@ -71,6 +86,7 @@ namespace HitoriKakurembo.Network
             networkTransform.UseUnreliableDeltas = true;
             networkTransform.Interpolate = true;
             playerPrefab.AddComponent<NetworkPlayer>();
+            playerPrefab.AddComponent<PlayerVisualModelController>();
             playerPrefab.AddComponent<PlayerController>();
             playerPrefab.AddComponent<PlayerFirstPersonCamera>();
             playerPrefab.AddComponent<PlayerInteraction>();
@@ -82,6 +98,38 @@ namespace HitoriKakurembo.Network
             playerPrefab.AddComponent<DollTrapManager>();
 
             return playerPrefab;
+        }
+
+        /// <summary>
+        /// Carga el prefab autorado desde Assets cuando se ejecuta en editor.
+        /// Este camino permite probar modelos y scripts configurados manualmente sin perder el fallback procedural.
+        /// </summary>
+        /// <returns>
+        /// Instancia desactivada del prefab autorado, o null cuando el asset no existe o no contiene NetworkObject.
+        /// </returns>
+        private static GameObject TryCreateAuthoredPlayerPrefabTemplate()
+        {
+#if UNITY_EDITOR
+            GameObject authoredPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(AuthoredPlayerPrefabPath);
+
+            if (authoredPrefab == null)
+            {
+                return null;
+            }
+
+            if (authoredPrefab.GetComponent<NetworkObject>() == null)
+            {
+                Debug.LogWarning($"El prefab autorado '{AuthoredPlayerPrefabPath}' no contiene NetworkObject. Se usara el prefab runtime procedural.");
+                return null;
+            }
+
+            GameObject template = Object.Instantiate(authoredPrefab);
+            template.name = RuntimePlayerPrefabName;
+            template.SetActive(false);
+            return template;
+#else
+            return null;
+#endif
         }
     }
 
