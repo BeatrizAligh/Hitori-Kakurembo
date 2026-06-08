@@ -2,27 +2,32 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
-  serializedVersion: 6
+  serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Puddle_Moss
-  m_Shader: {fileID: -6465566751694194690, guid: 41e99d5f2ee486e4f85e8cf7bf74a0bc,
-    type: 3}
-  m_ShaderKeywords: _DISABLE_DECALS _ENABLE_FOG_ON_TRANSPARENT _SURFACE_TYPE_TRANSPARENT
+  m_Shader: {fileID: -6465566751694194690, guid: 41e99d5f2ee486e4f85e8cf7bf74a0bc, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _DISABLE_DECALS
+  - _ENABLE_FOG_ON_TRANSPARENT
+  - _SURFACE_TYPE_TRANSPARENT
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 3000
   stringTagMap:
     MotionVector: User
-    RenderType: Transparent
   disabledShaderPasses:
   - MOTIONVECTORS
   - TransparentDepthPostpass
   - TransparentBackface
   - RayTracingPrepass
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -126,6 +131,7 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    m_Ints: []
     m_Floats:
     - Boolean_935d45834c3b471785ddee0c1ce80218: 0
     - Normal_intensity_vegetation: 0.1
@@ -206,6 +212,8 @@ Material:
     - _PPDMinSamples: 5
     - _PPDPrimitiveLength: 1
     - _PPDPrimitiveWidth: 1
+    - _QueueControl: 1
+    - _QueueOffset: 0
     - _RayTracing: 0
     - _ReceivesSSR: 1
     - _ReceivesSSRTransparent: 1
@@ -254,8 +262,7 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - Color_dc82ca42fb074c70940ac7ac8a229305: {r: 0.4627451, g: 0.3839204, b: 0, a: 0}
-    - Color_facd0bbf3f194e0bb3d9a63db3954212: {r: 0.20512173, g: 0.20784314, b: 0,
-        a: 0.94509804}
+    - Color_facd0bbf3f194e0bb3d9a63db3954212: {r: 0.20512173, g: 0.20784314, b: 0, a: 0.94509804}
     - Vector2_c7e92b0cf7f34d5b8ef399cce2525259: {r: 2, g: 2, b: 0, a: 0}
     - Vector2_dd1b3d8d8e094c279a56a0f9ef343c5c: {r: 8, g: 8, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
@@ -275,6 +282,20 @@ Material:
     - _UVMappingMask: {r: 1, g: 0, b: 0, a: 0}
     - _UVMappingMaskEmissive: {r: 1, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &459152977858957777
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
+  version: 10
 --- !u!114 &8114398312010405052
 MonoBehaviour:
   m_ObjectHideFlags: 11
