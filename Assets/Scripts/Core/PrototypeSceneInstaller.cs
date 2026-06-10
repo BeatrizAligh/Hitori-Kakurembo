@@ -2,6 +2,8 @@ using HitoriKakurembo.House;
 using HitoriKakurembo.Ritual;
 using HitoriKakurembo.Rounds;
 using HitoriKakurembo.Seals;
+using HitoriKakurembo.Spawning;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -132,6 +134,7 @@ namespace HitoriKakurembo.Core
                 managersRoot.AddComponent<DynamicRoomManager>();
                 managersRoot.AddComponent<SafeZoneManager>();
                 managersRoot.AddComponent<RitualManager>();
+                managersRoot.AddComponent<SpawnManager>();
                 managersRoot.AddComponent<SealManager>();
                 managersRoot.AddComponent<RoundManager>();
                 managersRoot.AddComponent<ScoreManager>();
@@ -143,6 +146,7 @@ namespace HitoriKakurembo.Core
             EnsureComponent<DynamicRoomManager>(managersRoot);
             EnsureComponent<SafeZoneManager>(managersRoot);
             EnsureComponent<RitualManager>(managersRoot);
+            EnsureComponent<SpawnManager>(managersRoot);
             EnsureComponent<SealManager>(managersRoot);
             EnsureComponent<RoundManager>(managersRoot);
             EnsureComponent<ScoreManager>(managersRoot);
@@ -323,7 +327,12 @@ namespace HitoriKakurembo.Core
                         rendererComponent.material.color = new Color(0.92f, 0.76f, 0.32f, 1f);
                     }
 
+                    EnsureComponent<NetworkObject>(sealObject);
                     ritualSeal = sealObject.AddComponent<RitualSeal>();
+                }
+                else
+                {
+                    EnsureComponent<NetworkObject>(ritualSeal.gameObject);
                 }
 
                 ritualSeal.SetSealIndex(sealIndex);

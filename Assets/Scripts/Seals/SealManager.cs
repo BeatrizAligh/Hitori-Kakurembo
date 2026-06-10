@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HitoriKakurembo.Core;
 using HitoriKakurembo.Network;
 using HitoriKakurembo.Rounds;
+using HitoriKakurembo.Spawning;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -10,12 +12,14 @@ using UnityEngine;
 namespace HitoriKakurembo.Seals
 {
     /// <summary>
-    /// Gestiona los seis sellos rituales, valida activaciones en servidor y sincroniza su estado con todos los clientes.
+    /// Orquesta los sellos rituales activos de la partida.
+    /// El servidor decide que sellos se spawnean, valida solicitudes de jugadores y publica snapshots para que la UI de todos los clientes vea el mismo progreso.
     /// </summary>
     public class SealManager : MonoBehaviour
     {
         /// <summary>
-        /// Cantidad fija de sellos esperada por el flujo ritual base.
+        /// Cantidad base de sellos del prototipo ritual.
+        /// Se conserva como constante para compatibilidad con scripts existentes.
         /// </summary>
         public const int RequiredSealCount = 6;
 
@@ -25,7 +29,7 @@ namespace HitoriKakurembo.Seals
         private const string SealActivationRequestMessageName = "HK_SealActivationRequest";
 
         /// <summary>
-        /// Mensaje NGO usado por el servidor para publicar el estado de los seis sellos.
+        /// Mensaje NGO usado por el servidor para publicar el estado de los sellos.
         /// </summary>
         private const string SealSnapshotMessageName = "HK_SealSnapshot";
 
@@ -37,12 +41,37 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Capacidad maxima del buffer de snapshot de sellos.
         /// </summary>
-        private const int SealSnapshotWriterCapacity = 256;
+        private const int SealSnapshotWriterCapacity = 512;
 
         /// <summary>
         /// Intervalo con el que un cliente reintenta pedir snapshot si aun no lo recibio.
         /// </summary>
         private const float SealSnapshotRequestRetryInterval = 1f;
+
+        /// <summary>
+        /// Cantidad de sellos que deben estar activos para completar el objetivo de ronda.
+        /// </summary>
+        [SerializeField] private int requiredSealCount = RequiredSealCount;
+
+        /// <summary>
+        /// Definiciones disponibles para generar sellos al iniciar una ronda.
+        /// </summary>
+        [SerializeField] private List<SealDefinition> availableSealDefinitions = new List<SealDefinition>();
+
+        /// <summary>
+        /// Si esta activo, el servidor intentara generar sellos automaticamente cuando la sesion de red este lista.
+        /// </summary>
+        [SerializeField] private bool spawnOnStart;
+
+        /// <summary>
+        /// Permite repetir tipos de sello cuando hay menos definiciones que sellos requeridos.
+        /// </summary>
+        [SerializeField] private bool allowDuplicateSealTypes = true;
+
+        /// <summary>
+        /// Distancia global minima entre sellos spawneados por el sistema.
+        /// </summary>
+        [SerializeField] private float minDistanceBetweenSeals = 2f;
 
         /// <summary>
         /// Slots de sellos registrados por indice logico.
@@ -55,14 +84,19 @@ namespace HitoriKakurembo.Seals
         [SerializeField] private float activationRange = 3f;
 
         /// <summary>
-        /// Estado autoritativo cacheado por indice de sello.
+        /// Estado autoritativo cacheado por indice de sello para snapshots legacy y UI.
         /// </summary>
-        private readonly bool[] activatedStates = new bool[RequiredSealCount];
+        private bool[] activatedStates = new bool[RequiredSealCount];
 
         /// <summary>
         /// Client id del jugador que activo cada sello, usado para UI y depuracion.
         /// </summary>
-        private readonly ulong[] activatedByClientIds = new ulong[RequiredSealCount];
+        private ulong[] activatedByClientIds = new ulong[RequiredSealCount];
+
+        /// <summary>
+        /// Registro plano usado para desuscribir eventos sin recorrer objetos destruidos.
+        /// </summary>
+        private readonly List<RitualSeal> registeredSeals = new List<RitualSeal>();
 
         /// <summary>
         /// Instancia de mensajeria NGO sobre la que se registraron los handlers.
@@ -85,14 +119,29 @@ namespace HitoriKakurembo.Seals
         private float nextSealSnapshotRequestTime;
 
         /// <summary>
-        /// Obtiene el arreglo de sellos actualmente conocido por el manager.
+        /// Evita ejecutar dos veces la notificacion de objetivo completado.
         /// </summary>
-        public RitualSeal[] RitualSeals => ritualSeals;
+        private bool allSealsActivatedNotified;
 
         /// <summary>
-        /// Obtiene la distancia maxima de activacion validada por servidor.
+        /// Evita repetir el spawn automatico cuando spawnOnStart esta activo.
         /// </summary>
+        private bool automaticSpawnCompleted;
+
+        /// <summary>
+        /// Evento local usado por UI o sistemas futuros para reaccionar a cambios de progreso.
+        /// </summary>
+        public event Action<int, int> OnSealProgressChanged;
+
+        /// <summary>
+        /// Evento local disparado cuando todos los sellos requeridos estan activos.
+        /// </summary>
+        public event Action OnAllSealsActivated;
+
+        public RitualSeal[] RitualSeals => ritualSeals;
         public float ActivationRange => activationRange;
+        public int RequiredSealTotal => GetRequiredSealCount();
+        public IReadOnlyList<SealDefinition> AvailableSealDefinitions => availableSealDefinitions;
 
         /// <summary>
         /// Registra este manager en el localizador de servicios e inicializa caches autoritativos.
@@ -100,6 +149,7 @@ namespace HitoriKakurembo.Seals
         private void Awake()
         {
             ServiceLocator.Register<SealManager>(this);
+            EnsureSealCapacity();
             InitializeActivatorCache();
         }
 
@@ -112,19 +162,35 @@ namespace HitoriKakurembo.Seals
         }
 
         /// <summary>
-        /// Cancela handlers de red para evitar duplicados al cambiar de escena.
+        /// Cancela handlers y eventos para evitar duplicados al cambiar de escena.
         /// </summary>
         private void OnDisable()
         {
             UnregisterSealMessageHandlers();
+
+            foreach (RitualSeal seal in registeredSeals)
+            {
+                if (seal != null)
+                {
+                    seal.StateChanged -= HandleSealStateChanged;
+                }
+            }
+
+            registeredSeals.Clear();
         }
 
         /// <summary>
-        /// Mantiene conectada la mensajeria NGO y solicita snapshot inicial en clientes.
+        /// Mantiene conectada la mensajeria NGO, solicita snapshot inicial en clientes y ejecuta spawn automatico si se configuro.
         /// </summary>
         private void Update()
         {
             RegisterSealMessageHandlers();
+
+            if (spawnOnStart && !automaticSpawnCompleted && IsServerActive())
+            {
+                automaticSpawnCompleted = true;
+                SpawnSealsForRound();
+            }
 
             if (ShouldRequestSealSnapshot())
             {
@@ -134,14 +200,111 @@ namespace HitoriKakurembo.Seals
         }
 
         /// <summary>
+        /// Solicita al SpawnManager la generacion server-side de los sellos requeridos para la ronda actual.
+        /// </summary>
+        public void SpawnSealsForRound()
+        {
+            if (!IsServerActive())
+            {
+                Debug.LogWarning("SpawnSealsForRound solo puede ejecutarse desde el servidor activo.");
+                return;
+            }
+
+            EnsureSealCapacity();
+            ClearSpawnedSeals();
+            ResetLocalSealCaches();
+
+            SpawnManager spawnManager = ServiceLocator.Resolve<SpawnManager>() ?? FindAnyObjectByType<SpawnManager>();
+
+            if (spawnManager == null)
+            {
+                Debug.LogWarning("No existe SpawnManager en escena. Agrega un SpawnManager antes de generar sellos.");
+                return;
+            }
+
+            if (availableSealDefinitions == null || availableSealDefinitions.Count == 0)
+            {
+                Debug.LogWarning("SealManager no tiene SealDefinitions disponibles. Crea assets SealDefinition y asigna la lista en el inspector.");
+                return;
+            }
+
+            HashSet<SealDefinition> usedDefinitions = new HashSet<SealDefinition>();
+            int requiredCount = GetRequiredSealCount();
+            int spawnedCount = 0;
+
+            for (int sealIndex = 0; sealIndex < requiredCount; sealIndex++)
+            {
+                SealDefinition definition = SelectDefinitionForSlot(sealIndex, usedDefinitions);
+
+                if (definition == null)
+                {
+                    Debug.LogWarning("No hay suficientes SealDefinitions para completar todos los sellos requeridos.");
+                    break;
+                }
+
+                if (spawnManager.TrySpawnSeal(definition, sealIndex, minDistanceBetweenSeals, out RitualSeal seal))
+                {
+                    RegisterSeal(seal);
+                    usedDefinitions.Add(definition);
+                    spawnedCount++;
+                    continue;
+                }
+
+                Debug.LogWarning($"No se pudo generar una pose valida para el sello '{definition.DisplayName}'.");
+            }
+
+            SendSealSnapshotToAllClients();
+            PublishSealProgress();
+
+            if (spawnedCount < requiredCount)
+            {
+                Debug.LogWarning($"SealManager genero {spawnedCount}/{requiredCount} sellos. Revisa SpawnAreas, capas y prefabs de red.");
+            }
+        }
+
+        /// <summary>
+        /// Destruye sellos generados por sistema y limpia sus slots sin afectar sellos manuales de escena.
+        /// </summary>
+        public void ClearSpawnedSeals()
+        {
+            EnsureSealCapacity();
+
+            SpawnManager spawnManager = ServiceLocator.Resolve<SpawnManager>() ?? FindAnyObjectByType<SpawnManager>();
+
+            if (IsServerActive())
+            {
+                spawnManager?.ClearSpawnedSeals();
+            }
+
+            for (int index = 0; index < ritualSeals.Length; index++)
+            {
+                RitualSeal seal = ritualSeals[index];
+
+                if (seal == null)
+                {
+                    ritualSeals[index] = null;
+                    activatedStates[index] = false;
+                    activatedByClientIds[index] = ulong.MaxValue;
+                    continue;
+                }
+
+                if (!seal.IsSpawnedBySystem)
+                {
+                    continue;
+                }
+
+                UnregisterSeal(seal);
+                ritualSeals[index] = null;
+                activatedStates[index] = false;
+                activatedByClientIds[index] = ulong.MaxValue;
+            }
+
+            allSealsActivatedNotified = false;
+        }
+
+        /// <summary>
         /// Registra un sello en el slot definido por su indice logico.
         /// </summary>
-        /// <param name="seal">
-        /// Sello que debe agregarse al conjunto gestionado.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> cuando el sello fue registrado correctamente; en caso contrario, <see langword="false"/>.
-        /// </returns>
         public bool RegisterSeal(RitualSeal seal)
         {
             if (seal == null)
@@ -149,23 +312,78 @@ namespace HitoriKakurembo.Seals
                 return false;
             }
 
-            int index = Mathf.Clamp(seal.SealIndex, 0, RequiredSealCount - 1);
+            EnsureSealCapacity();
+            int index = Mathf.Clamp(seal.SealIndex, 0, GetRequiredSealCount() - 1);
+            seal.SetSealIndex(index);
+
+            if (ritualSeals[index] != null && ritualSeals[index] != seal)
+            {
+                ritualSeals[index].StateChanged -= HandleSealStateChanged;
+                registeredSeals.Remove(ritualSeals[index]);
+            }
+
             ritualSeals[index] = seal;
-            seal.ApplyNetworkState(activatedStates[index], activatedByClientIds[index]);
+            seal.StateChanged -= HandleSealStateChanged;
+            seal.StateChanged += HandleSealStateChanged;
+
+            if (!registeredSeals.Contains(seal))
+            {
+                registeredSeals.Add(seal);
+            }
+
+            if (seal.IsActivated)
+            {
+                activatedStates[index] = true;
+                activatedByClientIds[index] = seal.ActivatingPlayerClientId;
+            }
+            else if (activatedStates[index])
+            {
+                seal.ApplyNetworkState(true, activatedByClientIds[index]);
+            }
+            else
+            {
+                seal.ApplyNetworkState(false, ulong.MaxValue);
+            }
+
+            PublishSealProgress();
             return true;
+        }
+
+        /// <summary>
+        /// Elimina un sello del registro si pertenece a este manager.
+        /// </summary>
+        public void UnregisterSeal(RitualSeal seal)
+        {
+            if (seal == null)
+            {
+                return;
+            }
+
+            seal.StateChanged -= HandleSealStateChanged;
+            registeredSeals.Remove(seal);
+
+            for (int index = 0; index < ritualSeals.Length; index++)
+            {
+                if (ritualSeals[index] != seal)
+                {
+                    continue;
+                }
+
+                ritualSeals[index] = null;
+                activatedStates[index] = false;
+                activatedByClientIds[index] = ulong.MaxValue;
+            }
+
+            PublishSealProgress();
         }
 
         /// <summary>
         /// Obtiene el sello registrado en el indice solicitado.
         /// </summary>
-        /// <param name="index">
-        /// Posicion logica del sello.
-        /// </param>
-        /// <returns>
-        /// Sello registrado en el indice solicitado, o <see langword="null"/> si el indice no es valido o no existe sello asignado.
-        /// </returns>
         public RitualSeal GetSeal(int index)
         {
+            EnsureSealCapacity();
+
             if (index < 0 || index >= ritualSeals.Length)
             {
                 return null;
@@ -177,12 +395,9 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Solicita activar un sello desde el jugador local; el servidor conserva la validacion definitiva.
         /// </summary>
-        /// <param name="sealIndex">
-        /// Indice del sello que el cliente intenta activar.
-        /// </param>
         public void RequestActivateSealFromLocalPlayer(int sealIndex)
         {
-            if (sealIndex < 0 || sealIndex >= RequiredSealCount)
+            if (sealIndex < 0 || sealIndex >= GetRequiredSealCount())
             {
                 return;
             }
@@ -219,38 +434,53 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Cuenta cuantos sellos del conjunto actual se encuentran activados.
         /// </summary>
-        /// <returns>
-        /// Numero de sellos activos.
-        /// </returns>
+        public int GetActiveSealCount()
+        {
+            EnsureSealCapacity();
+            int requiredCount = GetRequiredSealCount();
+            int activeCount = 0;
+
+            for (int index = 0; index < requiredCount; index++)
+            {
+                if (activatedStates[index])
+                {
+                    activeCount++;
+                }
+            }
+
+            return activeCount;
+        }
+
+        /// <summary>
+        /// Alias de compatibilidad usado por UI existente.
+        /// </summary>
         public int GetActivatedSealCount()
         {
-            return activatedStates.Count(isActivated => isActivated);
+            return GetActiveSealCount();
         }
 
         /// <summary>
         /// Construye un texto compacto con el progreso global de sellos.
         /// </summary>
-        /// <returns>
-        /// Texto listo para mostrarse en HUD.
-        /// </returns>
         public string GetSealProgressSummary()
         {
-            return $"Sellos activados: {GetActivatedSealCount()}/{RequiredSealCount}";
+            return $"Sellos activados: {GetActiveSealCount()}/{GetRequiredSealCount()}";
         }
 
         /// <summary>
         /// Construye una lista legible de estados de sellos para debug visual de la fase.
         /// </summary>
-        /// <returns>
-        /// Texto multilina con el estado de cada sello.
-        /// </returns>
         public string GetSealStatusList()
         {
-            List<string> entries = new List<string>(RequiredSealCount);
+            EnsureSealCapacity();
+            int requiredCount = GetRequiredSealCount();
+            List<string> entries = new List<string>(requiredCount);
 
-            for (int index = 0; index < RequiredSealCount; index++)
+            for (int index = 0; index < requiredCount; index++)
             {
-                entries.Add($"Sello {index + 1}: {(activatedStates[index] ? "Activo" : "Pendiente")}");
+                RitualSeal seal = ritualSeals[index];
+                string stateLabel = seal != null ? seal.CurrentState.ToString() : "Sin sello";
+                entries.Add($"Sello {index + 1}: {stateLabel}");
             }
 
             return string.Join("\n", entries);
@@ -259,12 +489,17 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Determina si la totalidad de sellos requeridos ya se encuentra activa.
         /// </summary>
-        /// <returns>
-        /// <see langword="true"/> cuando el conteo de sellos activos alcanza el total requerido; en caso contrario, <see langword="false"/>.
-        /// </returns>
+        public bool AreAllRequiredSealsActive()
+        {
+            return GetActiveSealCount() >= GetRequiredSealCount();
+        }
+
+        /// <summary>
+        /// Alias de compatibilidad usado por sistemas ya existentes.
+        /// </summary>
         public bool AreAllSealsActive()
         {
-            return GetActivatedSealCount() >= RequiredSealCount;
+            return AreAllRequiredSealsActive();
         }
 
         /// <summary>
@@ -272,19 +507,135 @@ namespace HitoriKakurembo.Seals
         /// </summary>
         public void ResetAllSeals()
         {
-            InitializeActivatorCache();
+            EnsureSealCapacity();
+            ResetLocalSealCaches();
 
-            for (int index = 0; index < RequiredSealCount; index++)
+            for (int index = 0; index < GetRequiredSealCount(); index++)
             {
-                activatedStates[index] = false;
-                activatedByClientIds[index] = ulong.MaxValue;
-                ritualSeals[index]?.ApplyNetworkState(false, ulong.MaxValue);
+                ritualSeals[index]?.ResetSeal();
             }
 
             if (IsServerActive())
             {
                 SendSealSnapshotToAllClients();
             }
+
+            PublishSealProgress();
+        }
+
+        /// <summary>
+        /// Actualiza caches cuando un RitualSeal cambia de estado por NetworkVariable o flujo legacy.
+        /// </summary>
+        private void HandleSealStateChanged(RitualSeal seal, SealState newState)
+        {
+            if (seal == null)
+            {
+                return;
+            }
+
+            EnsureSealCapacity();
+            int index = Mathf.Clamp(seal.SealIndex, 0, GetRequiredSealCount() - 1);
+            bool isActive = newState == SealState.Active;
+            activatedStates[index] = isActive;
+            activatedByClientIds[index] = isActive ? seal.ActivatingPlayerClientId : ulong.MaxValue;
+
+            if (!AreAllRequiredSealsActive())
+            {
+                allSealsActivatedNotified = false;
+            }
+
+            if (IsServerActive())
+            {
+                SendSealSnapshotToAllClients();
+                NotifyAllSealsActivatedIfNeeded();
+            }
+
+            PublishSealProgress();
+        }
+
+        /// <summary>
+        /// Selecciona una definicion para un slot respetando la configuracion de duplicados.
+        /// </summary>
+        private SealDefinition SelectDefinitionForSlot(int slotIndex, HashSet<SealDefinition> usedDefinitions)
+        {
+            if (availableSealDefinitions == null || availableSealDefinitions.Count == 0)
+            {
+                return null;
+            }
+
+            List<SealDefinition> validDefinitions = availableSealDefinitions.Where(definition => definition != null).ToList();
+
+            if (validDefinitions.Count == 0)
+            {
+                return null;
+            }
+
+            if (allowDuplicateSealTypes)
+            {
+                return validDefinitions[slotIndex % validDefinitions.Count];
+            }
+
+            foreach (SealDefinition definition in validDefinitions)
+            {
+                if (!usedDefinitions.Contains(definition))
+                {
+                    return definition;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Inicializa caches locales al estado base.
+        /// </summary>
+        private void ResetLocalSealCaches()
+        {
+            InitializeActivatorCache();
+            allSealsActivatedNotified = false;
+
+            for (int index = 0; index < activatedStates.Length; index++)
+            {
+                activatedStates[index] = false;
+                activatedByClientIds[index] = ulong.MaxValue;
+            }
+        }
+
+        /// <summary>
+        /// Asegura que los arreglos internos coincidan con la cantidad requerida configurada.
+        /// </summary>
+        private void EnsureSealCapacity()
+        {
+            int requiredCount = GetRequiredSealCount();
+
+            if (ritualSeals == null || ritualSeals.Length != requiredCount)
+            {
+                Array.Resize(ref ritualSeals, requiredCount);
+            }
+
+            if (activatedStates == null || activatedStates.Length != requiredCount)
+            {
+                Array.Resize(ref activatedStates, requiredCount);
+            }
+
+            if (activatedByClientIds == null || activatedByClientIds.Length != requiredCount)
+            {
+                int oldLength = activatedByClientIds != null ? activatedByClientIds.Length : 0;
+                Array.Resize(ref activatedByClientIds, requiredCount);
+
+                for (int index = oldLength; index < activatedByClientIds.Length; index++)
+                {
+                    activatedByClientIds[index] = ulong.MaxValue;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Devuelve una cantidad de sellos segura y nunca menor a uno.
+        /// </summary>
+        private int GetRequiredSealCount()
+        {
+            return Mathf.Max(1, requiredSealCount);
         }
 
         /// <summary>
@@ -292,6 +643,11 @@ namespace HitoriKakurembo.Seals
         /// </summary>
         private void InitializeActivatorCache()
         {
+            if (activatedByClientIds == null)
+            {
+                return;
+            }
+
             for (int index = 0; index < activatedByClientIds.Length; index++)
             {
                 if (activatedByClientIds[index] == 0 && !activatedStates[index])
@@ -348,12 +704,6 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Procesa una peticion de activacion enviada por un cliente.
         /// </summary>
-        /// <param name="senderClientId">
-        /// Cliente que solicita activar el sello.
-        /// </param>
-        /// <param name="reader">
-        /// Buffer con el indice de sello solicitado.
-        /// </param>
         private void HandleSealActivationRequestMessage(ulong senderClientId, FastBufferReader reader)
         {
             if (!IsServerActive())
@@ -368,18 +718,11 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Valida una activacion de sello en servidor y publica el resultado si fue aceptada.
         /// </summary>
-        /// <param name="clientId">
-        /// Cliente que intenta activar el sello.
-        /// </param>
-        /// <param name="sealIndex">
-        /// Sello solicitado.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> cuando la activacion fue aceptada por servidor.
-        /// </returns>
         private bool TryActivateSealOnServer(ulong clientId, int sealIndex)
         {
-            if (sealIndex < 0 || sealIndex >= RequiredSealCount || activatedStates[sealIndex])
+            EnsureSealCapacity();
+
+            if (sealIndex < 0 || sealIndex >= GetRequiredSealCount() || activatedStates[sealIndex])
             {
                 return false;
             }
@@ -399,35 +742,22 @@ namespace HitoriKakurembo.Seals
                 return false;
             }
 
-            activatedStates[sealIndex] = true;
-            activatedByClientIds[sealIndex] = clientId;
-            seal.ApplyNetworkState(true, clientId);
-            SendSealSnapshotToAllClients();
-
-            if (AreAllSealsActive())
+            if (seal.IsSpawned && seal.IsServer)
             {
-                RoundManager roundManager = ServiceLocator.Resolve<RoundManager>() ?? FindAnyObjectByType<RoundManager>();
-                roundManager?.NotifyAllSealsActivatedOnServer();
+                seal.StartActivationServer(clientId);
+                return true;
             }
 
+            seal.ActivateSeal(clientId);
             return true;
         }
 
         /// <summary>
         /// Valida si un jugador puede completar un sello en el estado actual de la ronda.
         /// </summary>
-        /// <param name="player">
-        /// Jugador que intenta activar el sello.
-        /// </param>
-        /// <param name="seal">
-        /// Sello objetivo.
-        /// </param>
-        /// <returns>
-        /// <see langword="true"/> cuando el jugador es superviviente, esta vivo y se encuentra en rango.
-        /// </returns>
         private bool CanPlayerActivateSeal(NetworkPlayer player, RitualSeal seal)
         {
-            if (player == null || seal == null || player.IsDoll || !player.IsAlive)
+            if (player == null || seal == null || !player.IsSurvivor || player.IsDoll || !player.IsAlive)
             {
                 return false;
             }
@@ -441,6 +771,30 @@ namespace HitoriKakurembo.Seals
 
             float distance = Vector3.Distance(player.transform.position, seal.transform.position);
             return distance <= activationRange;
+        }
+
+        /// <summary>
+        /// Publica evento local y deja a la UI saber que el progreso cambio.
+        /// </summary>
+        private void PublishSealProgress()
+        {
+            OnSealProgressChanged?.Invoke(GetActiveSealCount(), GetRequiredSealCount());
+        }
+
+        /// <summary>
+        /// Notifica una sola vez cuando todos los sellos requeridos quedan activos.
+        /// </summary>
+        private void NotifyAllSealsActivatedIfNeeded()
+        {
+            if (allSealsActivatedNotified || !AreAllRequiredSealsActive())
+            {
+                return;
+            }
+
+            allSealsActivatedNotified = true;
+            OnAllSealsActivated?.Invoke();
+            RoundManager roundManager = ServiceLocator.Resolve<RoundManager>() ?? FindAnyObjectByType<RoundManager>();
+            roundManager?.NotifyAllSealsActivatedOnServer();
         }
 
         /// <summary>
@@ -465,9 +819,6 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Publica el estado actual de sellos a un cliente especifico.
         /// </summary>
-        /// <param name="clientId">
-        /// Cliente que debe recibir el snapshot.
-        /// </param>
         private void SendSealSnapshotToClient(ulong clientId)
         {
             if (!CanSendSealMessages())
@@ -486,17 +837,16 @@ namespace HitoriKakurembo.Seals
         }
 
         /// <summary>
-        /// Construye un snapshot serializado con los seis estados de sellos.
+        /// Construye un snapshot serializado con los estados de sellos.
         /// </summary>
-        /// <returns>
-        /// Writer temporal que debe liberarse despues de enviar el mensaje.
-        /// </returns>
         private FastBufferWriter CreateSealSnapshotWriter()
         {
+            EnsureSealCapacity();
+            int requiredCount = GetRequiredSealCount();
             FastBufferWriter writer = new FastBufferWriter(SealSnapshotWriterCapacity, Allocator.Temp);
-            writer.WriteValueSafe(RequiredSealCount);
+            writer.WriteValueSafe(requiredCount);
 
-            for (int index = 0; index < RequiredSealCount; index++)
+            for (int index = 0; index < requiredCount; index++)
             {
                 writer.WriteValueSafe(index);
                 writer.WriteValueSafe(activatedStates[index]);
@@ -509,15 +859,11 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Aplica localmente un snapshot de sellos recibido desde servidor.
         /// </summary>
-        /// <param name="senderClientId">
-        /// Cliente que envio el mensaje; normalmente el servidor.
-        /// </param>
-        /// <param name="reader">
-        /// Buffer con el estado de los sellos.
-        /// </param>
         private void HandleSealSnapshotMessage(ulong senderClientId, FastBufferReader reader)
         {
             reader.ReadValueSafe(out int sealCount);
+            EnsureSealCapacity();
+            int readableCount = Mathf.Min(sealCount, GetRequiredSealCount());
 
             for (int entryIndex = 0; entryIndex < sealCount; entryIndex++)
             {
@@ -525,7 +871,7 @@ namespace HitoriKakurembo.Seals
                 reader.ReadValueSafe(out bool isActivated);
                 reader.ReadValueSafe(out ulong activatedByClientId);
 
-                if (sealIndex < 0 || sealIndex >= RequiredSealCount)
+                if (sealIndex < 0 || sealIndex >= readableCount)
                 {
                     continue;
                 }
@@ -536,17 +882,12 @@ namespace HitoriKakurembo.Seals
             }
 
             hasReceivedSealSnapshot = true;
+            PublishSealProgress();
         }
 
         /// <summary>
         /// Atiende la solicitud de snapshot de sellos enviada por un cliente.
         /// </summary>
-        /// <param name="senderClientId">
-        /// Cliente que solicita el estado.
-        /// </param>
-        /// <param name="reader">
-        /// Buffer vacio requerido por la firma de NGO.
-        /// </param>
         private void HandleSealSnapshotRequestMessage(ulong senderClientId, FastBufferReader reader)
         {
             if (!IsServerActive())
@@ -582,9 +923,6 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Determina si esta instancia cliente necesita pedir el snapshot inicial de sellos.
         /// </summary>
-        /// <returns>
-        /// <see langword="true"/> cuando conviene solicitar estado al servidor.
-        /// </returns>
         private bool ShouldRequestSealSnapshot()
         {
             NetworkManager networkManager = NetworkManager.Singleton;
@@ -599,9 +937,6 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Determina si se pueden enviar mensajes de sellos desde servidor.
         /// </summary>
-        /// <returns>
-        /// <see langword="true"/> cuando la mensajeria de Netcode esta lista.
-        /// </returns>
         private static bool CanSendSealMessages()
         {
             return NetworkManager.Singleton != null
@@ -613,9 +948,6 @@ namespace HitoriKakurembo.Seals
         /// <summary>
         /// Determina si la instancia local actua como servidor activo.
         /// </summary>
-        /// <returns>
-        /// <see langword="true"/> cuando el servidor de NGO esta activo localmente.
-        /// </returns>
         private static bool IsServerActive()
         {
             return NetworkManager.Singleton != null

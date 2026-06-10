@@ -1,6 +1,7 @@
 using HitoriKakurembo.Core;
 using HitoriKakurembo.Player;
 using HitoriKakurembo.Roles;
+using HitoriKakurembo.Seals;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -11,7 +12,7 @@ namespace HitoriKakurembo.Network
     /// <summary>
     /// Almacena el estado sincronizado de identidad, rol y puntuacion para un jugador de red individual.
     /// </summary>
-    public class NetworkPlayer : NetworkBehaviour
+    public class NetworkPlayer : NetworkBehaviour, ISealInteractor
     {
         /// <summary>
         /// Referencia cacheada al manejador local de rol para mantener sincronizado el estado visual y logico del jugador.
@@ -148,6 +149,16 @@ namespace HitoriKakurembo.Network
         /// Obtiene si el jugador sigue vivo dentro de la ronda actual.
         /// </summary>
         public bool IsAlive => isAlive.Value;
+
+        /// <summary>
+        /// Identificador expuesto para sistemas desacoplados de interaccion con sellos.
+        /// </summary>
+        public ulong ClientId => OwnerClientId;
+
+        /// <summary>
+        /// Indica si el jugador puede actuar como superviviente frente a sistemas rituales.
+        /// </summary>
+        public bool IsSurvivor => !IsDoll;
 
         /// <summary>
         /// Obtiene el rol sincronizado del jugador.

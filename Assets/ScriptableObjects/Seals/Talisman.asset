@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89f9d1bc33a3e5740acf9f9da28cec79, type: 3}
+  m_Name: Talisman
+  m_EditorClassIdentifier: Assembly-CSharp::HitoriKakurembo.Seals.SealDefinition
+  sealId: seal_talisman
+  displayName: Ritual Seal
+  description: A ritual seal used by survivors.
+  sealPrefab: {fileID: 0}
+  sealKind: 0
+  placementType: 0
+  requiredSurfaceType: 1
+  visualSize: {x: 0.45, y: 0.65, z: 0.05}
+  activationDuration: 1.5
+  deactivationDuration: 1.5
+  minDistanceFromOtherSeals: 2
+  requiresLineOfSight: 0
+  canBeActivatedBySurvivor: 1
+  canBeDeactivatedByDoll: 1
+  canBeCorrupted: 0
+  canBeReactivated: 1
+  activationSound: {fileID: 0}
+  deactivationSound: {fileID: 0}
+  activationVfx: {fileID: 0}
+  deactivationVfx: {fileID: 0}
