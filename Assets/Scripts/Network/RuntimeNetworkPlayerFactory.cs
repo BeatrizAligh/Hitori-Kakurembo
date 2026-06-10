@@ -90,6 +90,7 @@ namespace HitoriKakurembo.Network
             playerPrefab.AddComponent<PlayerController>();
             playerPrefab.AddComponent<PlayerFirstPersonCamera>();
             playerPrefab.AddComponent<PlayerInteraction>();
+            playerPrefab.AddComponent<global::PlayerInteraction>();
             playerPrefab.AddComponent<PlayerInventory>();
             playerPrefab.AddComponent<PlayerRoleHandler>();
             playerPrefab.AddComponent<PlayerVisibilityHandler>();

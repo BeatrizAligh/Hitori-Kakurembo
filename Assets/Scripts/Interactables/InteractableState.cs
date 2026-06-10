@@ -135,12 +135,26 @@ public class InteractableState : NetworkBehaviour
     public bool CanInteract() => _playerInTrigger && !_isAnimating;
 
     /// <summary>
+    /// Returns true when this interactable can be triggered by a camera-centered look ray.
+    /// </summary>
+    public bool CanInteractFromLook() => !_isAnimating;
+
+    /// <summary>
     /// Called by the local PlayerInteraction when the player presses the action button.
     /// Routes the request to the server via RPC.
     /// </summary>
     public void Interact()
     {
         if (!CanInteract()) return;
+        RequestInteractServerRpc();
+    }
+
+    /// <summary>
+    /// Called by the local PlayerInteraction when the player presses the action button while looking at this object.
+    /// </summary>
+    public void InteractFromLook()
+    {
+        if (!CanInteractFromLook()) return;
         RequestInteractServerRpc();
     }
 
