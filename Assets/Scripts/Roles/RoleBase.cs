@@ -40,7 +40,12 @@ namespace HitoriKakurembo.Roles
         /// <summary>
         /// Rol generico de superviviente cuando no existe una especializacion adicional.
         /// </summary>
-        Survivor = 6
+        Survivor = 6,
+
+        /// <summary>
+        /// Rol provisional asociado al celular y a recursos de soporte.
+        /// </summary>
+        Oxygenated = 7
     }
 
     /// <summary>

@@ -35,7 +35,27 @@ namespace HitoriKakurembo.Items
         /// <summary>
         /// Item relacionado con proteccion o limpieza ritual.
         /// </summary>
-        SaltWater = 5
+        SaltWater = 5,
+
+        /// <summary>
+        /// Item de iluminacion portatil que activa la linterna del jugador.
+        /// </summary>
+        Flashlight = 6,
+
+        /// <summary>
+        /// Item propio del fotografo/camarografo para vision de camara.
+        /// </summary>
+        VideoCamera = 7,
+
+        /// <summary>
+        /// Item propio del rol oxigenado para comunicacion o utilidad contextual.
+        /// </summary>
+        CellPhone = 8,
+
+        /// <summary>
+        /// Consumible usado para alimentar items electricos.
+        /// </summary>
+        Battery = 9
     }
 
     /// <summary>
