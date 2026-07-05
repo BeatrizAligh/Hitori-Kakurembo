@@ -1,5 +1,6 @@
 using System.Text;
 using TestMultiplayer.Networking;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,7 +11,7 @@ namespace TestMultiplayer.UI
     {
         [SerializeField] private TestMultiplayerSessionManager sessionManager;
 
-        private Text lobbyText;
+        private TMP_Text lobbyText;
         private Button readyButton;
         private Button startButton;
 
@@ -103,7 +104,12 @@ namespace TestMultiplayer.UI
             lobbyText.text = builder.ToString();
 
             TestMultiplayerPlayerBrain localBrain = FindLocalBrain();
-            readyButton.GetComponentInChildren<Text>().text = localBrain != null && localBrain.IsReady ? "No listo" : "Listo";
+            TMP_Text readyLabel = readyButton.GetComponentInChildren<TMP_Text>();
+
+            if (readyLabel != null)
+            {
+                readyLabel.text = localBrain != null && localBrain.IsReady ? "No listo" : "Listo";
+            }
             startButton.interactable = sessionManager.IsHost;
         }
 

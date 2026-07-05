@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,8 +7,6 @@ namespace TestMultiplayer.UI
 {
     public static class TestMultiplayerUIFactory
     {
-        private static Font cachedFont;
-
         public static Canvas CreateCanvas(string name, Transform parent)
         {
             GameObject canvasObject = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
@@ -75,19 +74,18 @@ namespace TestMultiplayer.UI
             return rect;
         }
 
-        public static Text Text(string name, Transform parent, string value, int size, TextAnchor alignment)
+        public static TMP_Text Text(string name, Transform parent, string value, int size, TextAnchor alignment)
         {
-            GameObject textObject = new GameObject(name, typeof(Text), typeof(LayoutElement));
+            GameObject textObject = new GameObject(name, typeof(TextMeshProUGUI), typeof(LayoutElement));
             textObject.transform.SetParent(parent, false);
 
-            Text text = textObject.GetComponent<Text>();
-            text.font = GetFont();
+            TMP_Text text = textObject.GetComponent<TMP_Text>();
             text.text = value;
             text.fontSize = size;
-            text.alignment = alignment;
+            text.alignment = ToTmpAlignment(alignment);
             text.color = Color.white;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.enableWordWrapping = true;
+            text.overflowMode = TextOverflowModes.Overflow;
 
             LayoutElement layout = textObject.GetComponent<LayoutElement>();
             layout.minHeight = size + 12f;
@@ -101,7 +99,7 @@ namespace TestMultiplayer.UI
             buttonObject.GetComponent<Image>().color = new Color(0.16f, 0.42f, 0.5f);
             buttonObject.GetComponent<LayoutElement>().minHeight = 54f;
 
-            Text labelText = Text("Label", buttonObject.transform, label, 20, TextAnchor.MiddleCenter);
+            TMP_Text labelText = Text("Label", buttonObject.transform, label, 20, TextAnchor.MiddleCenter);
             RectTransform labelRect = labelText.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
@@ -130,7 +128,7 @@ namespace TestMultiplayer.UI
                 return;
             }
 
-            Text labelText = button.GetComponentInChildren<Text>(true);
+            TMP_Text labelText = button.GetComponentInChildren<TMP_Text>(true);
 
             if (labelText != null)
             {
@@ -138,33 +136,32 @@ namespace TestMultiplayer.UI
             }
         }
 
-        public static InputField Input(string name, Transform parent, string placeholder, string value)
+        public static TMP_InputField Input(string name, Transform parent, string placeholder, string value)
         {
-            GameObject inputObject = new GameObject(name, typeof(Image), typeof(InputField), typeof(LayoutElement));
+            GameObject inputObject = new GameObject(name, typeof(Image), typeof(TMP_InputField), typeof(LayoutElement));
             inputObject.transform.SetParent(parent, false);
             inputObject.GetComponent<Image>().color = new Color(0.16f, 0.17f, 0.19f);
             inputObject.GetComponent<LayoutElement>().minHeight = 54f;
 
-            Text text = InputText("Text", inputObject.transform, Color.white);
-            Text placeholderText = InputText("Placeholder", inputObject.transform, new Color(0.72f, 0.74f, 0.78f));
+            TMP_Text text = InputText("Text", inputObject.transform, Color.white);
+            TMP_Text placeholderText = InputText("Placeholder", inputObject.transform, new Color(0.72f, 0.74f, 0.78f));
             placeholderText.text = placeholder;
-            placeholderText.fontStyle = FontStyle.Italic;
+            placeholderText.fontStyle = FontStyles.Italic;
 
-            InputField input = inputObject.GetComponent<InputField>();
+            TMP_InputField input = inputObject.GetComponent<TMP_InputField>();
             input.textComponent = text;
             input.placeholder = placeholderText;
             input.text = value;
             return input;
         }
 
-        private static Text InputText(string name, Transform parent, Color color)
+        private static TMP_Text InputText(string name, Transform parent, Color color)
         {
-            GameObject textObject = new GameObject(name, typeof(Text));
+            GameObject textObject = new GameObject(name, typeof(TextMeshProUGUI));
             textObject.transform.SetParent(parent, false);
-            Text text = textObject.GetComponent<Text>();
-            text.font = GetFont();
+            TMP_Text text = textObject.GetComponent<TMP_Text>();
             text.fontSize = 18;
-            text.alignment = TextAnchor.MiddleLeft;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
             text.color = color;
 
             RectTransform rect = text.GetComponent<RectTransform>();
@@ -175,15 +172,31 @@ namespace TestMultiplayer.UI
             return text;
         }
 
-        private static Font GetFont()
+        private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
         {
-            if (cachedFont != null)
+            switch (alignment)
             {
-                return cachedFont;
+                case TextAnchor.UpperLeft:
+                    return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter:
+                    return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight:
+                    return TextAlignmentOptions.TopRight;
+                case TextAnchor.MiddleLeft:
+                    return TextAlignmentOptions.MidlineLeft;
+                case TextAnchor.MiddleCenter:
+                    return TextAlignmentOptions.Center;
+                case TextAnchor.MiddleRight:
+                    return TextAlignmentOptions.MidlineRight;
+                case TextAnchor.LowerLeft:
+                    return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter:
+                    return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight:
+                    return TextAlignmentOptions.BottomRight;
+                default:
+                    return TextAlignmentOptions.Center;
             }
-
-            cachedFont = UnityEngine.Font.CreateDynamicFontFromOSFont("Arial", 16);
-            return cachedFont;
         }
     }
 }

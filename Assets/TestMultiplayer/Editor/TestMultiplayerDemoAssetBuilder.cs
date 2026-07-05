@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using TestMultiplayer.Gameplay;
 using TestMultiplayer.Networking;
 using TestMultiplayer.UI;
@@ -88,13 +89,12 @@ namespace TestMultiplayer.Editor
             buttonObject.GetComponent<Image>().color = new Color(0.16f, 0.42f, 0.5f);
             buttonObject.GetComponent<LayoutElement>().minHeight = 54f;
 
-            GameObject labelObject = new GameObject("Label", typeof(Text));
+            GameObject labelObject = new GameObject("Label", typeof(TextMeshProUGUI));
             labelObject.transform.SetParent(buttonObject.transform, false);
-            Text label = labelObject.GetComponent<Text>();
-            label.font = Font.CreateDynamicFontFromOSFont("Arial", 16);
+            TMP_Text label = labelObject.GetComponent<TMP_Text>();
             label.text = "Button";
             label.fontSize = 20;
-            label.alignment = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignmentOptions.Center;
             label.color = Color.white;
 
             RectTransform labelRect = label.GetComponent<RectTransform>();
@@ -138,8 +138,8 @@ namespace TestMultiplayer.Editor
             columnLayout.childControlWidth = true;
             columnLayout.childControlHeight = true;
 
-            Text playerNameText = CreateText("PlayerName", textColumn.transform, "Player", 14, TextAnchor.MiddleLeft);
-            Text pingText = CreateText("Ping", textColumn.transform, "Ping: --", 12, TextAnchor.MiddleLeft);
+            TMP_Text playerNameText = CreateText("PlayerName", textColumn.transform, "Player", 14, TextAnchor.MiddleLeft);
+            TMP_Text pingText = CreateText("Ping", textColumn.transform, "Ping: --", 12, TextAnchor.MiddleLeft);
 
             TestMultiplayerHudPlayerRow row = rowObject.AddComponent<TestMultiplayerHudPlayerRow>();
             SerializedObject serializedRow = new SerializedObject(row);
@@ -217,11 +217,11 @@ namespace TestMultiplayer.Editor
             GameObject window = CreateWindowRoot("TestMultiplayerCustomizationWindow");
             CreateText("Title", window.transform, "Personaje", 30, TextAnchor.MiddleCenter);
             CreateInput("PlayerNameInput", window.transform, "Nombre", "Player");
-            CreateInput("HeadInput", window.transform, "Cabeza", "0").contentType = InputField.ContentType.IntegerNumber;
-            CreateInput("HairInput", window.transform, "Cabello", "0").contentType = InputField.ContentType.IntegerNumber;
-            CreateInput("UpperBodyInput", window.transform, "Parte superior", "0").contentType = InputField.ContentType.IntegerNumber;
-            CreateInput("LowerBodyInput", window.transform, "Parte inferior", "0").contentType = InputField.ContentType.IntegerNumber;
-            CreateInput("EyesInput", window.transform, "Ojos", "0").contentType = InputField.ContentType.IntegerNumber;
+            CreateInput("HeadInput", window.transform, "Cabeza", "0").contentType = TMP_InputField.ContentType.IntegerNumber;
+            CreateInput("HairInput", window.transform, "Cabello", "0").contentType = TMP_InputField.ContentType.IntegerNumber;
+            CreateInput("UpperBodyInput", window.transform, "Parte superior", "0").contentType = TMP_InputField.ContentType.IntegerNumber;
+            CreateInput("LowerBodyInput", window.transform, "Parte inferior", "0").contentType = TMP_InputField.ContentType.IntegerNumber;
+            CreateInput("EyesInput", window.transform, "Ojos", "0").contentType = TMP_InputField.ContentType.IntegerNumber;
             AddButton(buttonPrefab, "SaveButton", window.transform, "Guardar");
             AddButton(buttonPrefab, "BackButton", window.transform, "Volver");
             PrefabUtility.SaveAsPrefabAsset(window, CustomizationWindowPrefabPath);
@@ -385,7 +385,7 @@ namespace TestMultiplayer.Editor
                 : CreateFallbackButton(name, parent);
 
             button.name = name;
-            Text labelText = button.GetComponentInChildren<Text>(true);
+            TMP_Text labelText = button.GetComponentInChildren<TMP_Text>(true);
 
             if (labelText != null)
             {
@@ -401,7 +401,7 @@ namespace TestMultiplayer.Editor
             buttonObject.transform.SetParent(parent, false);
             buttonObject.GetComponent<Image>().color = new Color(0.16f, 0.42f, 0.5f);
             buttonObject.GetComponent<LayoutElement>().minHeight = 54f;
-            Text label = CreateText("Label", buttonObject.transform, "Button", 20, TextAnchor.MiddleCenter);
+            TMP_Text label = CreateText("Label", buttonObject.transform, "Button", 20, TextAnchor.MiddleCenter);
             RectTransform labelRect = label.GetComponent<RectTransform>();
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
@@ -410,53 +410,51 @@ namespace TestMultiplayer.Editor
             return buttonObject.GetComponent<Button>();
         }
 
-        private static Text CreateText(string name, Transform parent, string value, int size, TextAnchor alignment)
+        private static TMP_Text CreateText(string name, Transform parent, string value, int size, TextAnchor alignment)
         {
-            GameObject textObject = new GameObject(name, typeof(Text), typeof(LayoutElement));
+            GameObject textObject = new GameObject(name, typeof(TextMeshProUGUI), typeof(LayoutElement));
             textObject.transform.SetParent(parent, false);
 
-            Text text = textObject.GetComponent<Text>();
-            text.font = Font.CreateDynamicFontFromOSFont("Arial", 16);
+            TMP_Text text = textObject.GetComponent<TMP_Text>();
             text.text = value;
             text.fontSize = size;
-            text.alignment = alignment;
+            text.alignment = ToTmpAlignment(alignment);
             text.color = Color.white;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.enableWordWrapping = true;
+            text.overflowMode = TextOverflowModes.Overflow;
 
             LayoutElement layout = textObject.GetComponent<LayoutElement>();
             layout.minHeight = size + 12f;
             return text;
         }
 
-        private static InputField CreateInput(string name, Transform parent, string placeholder, string value)
+        private static TMP_InputField CreateInput(string name, Transform parent, string placeholder, string value)
         {
-            GameObject inputObject = new GameObject(name, typeof(Image), typeof(InputField), typeof(LayoutElement));
+            GameObject inputObject = new GameObject(name, typeof(Image), typeof(TMP_InputField), typeof(LayoutElement));
             inputObject.transform.SetParent(parent, false);
             inputObject.GetComponent<Image>().color = new Color(0.16f, 0.17f, 0.19f);
             inputObject.GetComponent<LayoutElement>().minHeight = 54f;
 
-            Text text = CreateInputText("Text", inputObject.transform, Color.white);
-            Text placeholderText = CreateInputText("Placeholder", inputObject.transform, new Color(0.72f, 0.74f, 0.78f));
+            TMP_Text text = CreateInputText("Text", inputObject.transform, Color.white);
+            TMP_Text placeholderText = CreateInputText("Placeholder", inputObject.transform, new Color(0.72f, 0.74f, 0.78f));
             placeholderText.text = placeholder;
-            placeholderText.fontStyle = FontStyle.Italic;
+            placeholderText.fontStyle = FontStyles.Italic;
 
-            InputField input = inputObject.GetComponent<InputField>();
+            TMP_InputField input = inputObject.GetComponent<TMP_InputField>();
             input.textComponent = text;
             input.placeholder = placeholderText;
             input.text = value;
             return input;
         }
 
-        private static Text CreateInputText(string name, Transform parent, Color color)
+        private static TMP_Text CreateInputText(string name, Transform parent, Color color)
         {
-            GameObject textObject = new GameObject(name, typeof(Text));
+            GameObject textObject = new GameObject(name, typeof(TextMeshProUGUI));
             textObject.transform.SetParent(parent, false);
 
-            Text text = textObject.GetComponent<Text>();
-            text.font = Font.CreateDynamicFontFromOSFont("Arial", 16);
+            TMP_Text text = textObject.GetComponent<TMP_Text>();
             text.fontSize = 18;
-            text.alignment = TextAnchor.MiddleLeft;
+            text.alignment = TextAlignmentOptions.MidlineLeft;
             text.color = color;
 
             RectTransform rect = text.GetComponent<RectTransform>();
@@ -483,33 +481,33 @@ namespace TestMultiplayer.Editor
             serializedReferences.FindProperty("lobbyWindow").objectReferenceValue = lobbyWindow;
             serializedReferences.FindProperty("connectedPlayersHud").objectReferenceValue = connectedPlayersHud;
 
-            serializedReferences.FindProperty("mainProfileText").objectReferenceValue = Find<Text>(mainWindow, "ProfileText");
+            serializedReferences.FindProperty("mainProfileText").objectReferenceValue = Find<TMP_Text>(mainWindow, "ProfileText");
             serializedReferences.FindProperty("openSessionButton").objectReferenceValue = Find<Button>(mainWindow, "OpenSessionButton");
             serializedReferences.FindProperty("openCustomizationButton").objectReferenceValue = Find<Button>(mainWindow, "OpenCustomizationButton");
-            serializedReferences.FindProperty("mainStatusText").objectReferenceValue = Find<Text>(mainWindow, "StatusText");
+            serializedReferences.FindProperty("mainStatusText").objectReferenceValue = Find<TMP_Text>(mainWindow, "StatusText");
 
-            serializedReferences.FindProperty("sessionPlayerNameInput").objectReferenceValue = Find<InputField>(sessionWindow, "PlayerNameInput");
-            serializedReferences.FindProperty("joinCodeInput").objectReferenceValue = Find<InputField>(sessionWindow, "JoinCodeInput");
+            serializedReferences.FindProperty("sessionPlayerNameInput").objectReferenceValue = Find<TMP_InputField>(sessionWindow, "PlayerNameInput");
+            serializedReferences.FindProperty("joinCodeInput").objectReferenceValue = Find<TMP_InputField>(sessionWindow, "JoinCodeInput");
             serializedReferences.FindProperty("createLobbyButton").objectReferenceValue = Find<Button>(sessionWindow, "CreateLobbyButton");
             serializedReferences.FindProperty("joinLobbyButton").objectReferenceValue = Find<Button>(sessionWindow, "JoinLobbyButton");
             serializedReferences.FindProperty("sessionBackButton").objectReferenceValue = Find<Button>(sessionWindow, "BackButton");
-            serializedReferences.FindProperty("sessionStatusText").objectReferenceValue = Find<Text>(sessionWindow, "StatusText");
+            serializedReferences.FindProperty("sessionStatusText").objectReferenceValue = Find<TMP_Text>(sessionWindow, "StatusText");
 
-            serializedReferences.FindProperty("customizationPlayerNameInput").objectReferenceValue = Find<InputField>(customizationWindow, "PlayerNameInput");
-            serializedReferences.FindProperty("headInput").objectReferenceValue = Find<InputField>(customizationWindow, "HeadInput");
-            serializedReferences.FindProperty("hairInput").objectReferenceValue = Find<InputField>(customizationWindow, "HairInput");
-            serializedReferences.FindProperty("upperBodyInput").objectReferenceValue = Find<InputField>(customizationWindow, "UpperBodyInput");
-            serializedReferences.FindProperty("lowerBodyInput").objectReferenceValue = Find<InputField>(customizationWindow, "LowerBodyInput");
-            serializedReferences.FindProperty("eyesInput").objectReferenceValue = Find<InputField>(customizationWindow, "EyesInput");
+            serializedReferences.FindProperty("customizationPlayerNameInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "PlayerNameInput");
+            serializedReferences.FindProperty("headInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "HeadInput");
+            serializedReferences.FindProperty("hairInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "HairInput");
+            serializedReferences.FindProperty("upperBodyInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "UpperBodyInput");
+            serializedReferences.FindProperty("lowerBodyInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "LowerBodyInput");
+            serializedReferences.FindProperty("eyesInput").objectReferenceValue = Find<TMP_InputField>(customizationWindow, "EyesInput");
             serializedReferences.FindProperty("saveCustomizationButton").objectReferenceValue = Find<Button>(customizationWindow, "SaveButton");
             serializedReferences.FindProperty("customizationBackButton").objectReferenceValue = Find<Button>(customizationWindow, "BackButton");
 
-            serializedReferences.FindProperty("lobbyStateText").objectReferenceValue = Find<Text>(lobbyWindow, "LobbyStateText");
+            serializedReferences.FindProperty("lobbyStateText").objectReferenceValue = Find<TMP_Text>(lobbyWindow, "LobbyStateText");
             serializedReferences.FindProperty("readyButton").objectReferenceValue = Find<Button>(lobbyWindow, "ReadyButton");
             serializedReferences.FindProperty("startGameButton").objectReferenceValue = Find<Button>(lobbyWindow, "StartGameButton");
             serializedReferences.FindProperty("leaveButton").objectReferenceValue = Find<Button>(lobbyWindow, "LeaveButton");
 
-            serializedReferences.FindProperty("connectedPlayersTitleText").objectReferenceValue = Find<Text>(connectedPlayersHud, "ConnectedPlayersTitle");
+            serializedReferences.FindProperty("connectedPlayersTitleText").objectReferenceValue = Find<TMP_Text>(connectedPlayersHud, "ConnectedPlayersTitle");
             serializedReferences.FindProperty("connectedPlayersRowsRoot").objectReferenceValue = FindTransform(connectedPlayersHud, "PlayerRows");
             serializedReferences.FindProperty("connectedPlayerRowPrefab").objectReferenceValue = playerRowPrefab;
             serializedReferences.ApplyModifiedPropertiesWithoutUndo();
@@ -537,6 +535,33 @@ namespace TestMultiplayer.Editor
             }
 
             return null;
+        }
+
+        private static TextAlignmentOptions ToTmpAlignment(TextAnchor alignment)
+        {
+            switch (alignment)
+            {
+                case TextAnchor.UpperLeft:
+                    return TextAlignmentOptions.TopLeft;
+                case TextAnchor.UpperCenter:
+                    return TextAlignmentOptions.Top;
+                case TextAnchor.UpperRight:
+                    return TextAlignmentOptions.TopRight;
+                case TextAnchor.MiddleLeft:
+                    return TextAlignmentOptions.MidlineLeft;
+                case TextAnchor.MiddleCenter:
+                    return TextAlignmentOptions.Center;
+                case TextAnchor.MiddleRight:
+                    return TextAlignmentOptions.MidlineRight;
+                case TextAnchor.LowerLeft:
+                    return TextAlignmentOptions.BottomLeft;
+                case TextAnchor.LowerCenter:
+                    return TextAlignmentOptions.Bottom;
+                case TextAnchor.LowerRight:
+                    return TextAlignmentOptions.BottomRight;
+                default:
+                    return TextAlignmentOptions.Center;
+            }
         }
 
         private static void EnsureFolders()

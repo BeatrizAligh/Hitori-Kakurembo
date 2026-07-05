@@ -8,7 +8,8 @@
     "Unity.Services.Core",
     "Unity.Services.Authentication",
     "Unity.Services.Relay",
-    "Unity.UGUI"
+    "Unity.UGUI",
+    "Unity.TextMeshPro"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

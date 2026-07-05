@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &250358820
+--- !u!1 &569101614
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,9 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 250358823}
-  - component: {fileID: 250358822}
-  - component: {fileID: 250358821}
+  - component: {fileID: 569101617}
+  - component: {fileID: 569101616}
+  - component: {fileID: 569101615}
   m_Layer: 0
   m_Name: TestMultiplayerDemo
   m_TagString: Untagged
@@ -137,27 +137,27 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &250358821
+--- !u!114 &569101615
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 250358820}
+  m_GameObject: {fileID: 569101614}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c68735fd159ef484dab5a5bca5efadbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TestMultiplayer.Runtime::TestMultiplayer.UI.TestMultiplayerMainMenuUI
-  sessionManager: {fileID: 250358822}
-  uiRootPrefab: {fileID: 0}
---- !u!114 &250358822
+  sessionManager: {fileID: 569101616}
+  uiRootPrefab: {fileID: 2254578529136455512, guid: 89334f44aa27f414a91493e7325aa89f, type: 3}
+--- !u!114 &569101616
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 250358820}
+  m_GameObject: {fileID: 569101614}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2957cca50bf541e46b5b2f6e40453f42, type: 3}
@@ -171,13 +171,13 @@ MonoBehaviour:
   maximumPlayers: 6
   minimumPlayersToStart: 1
   relayConnectionType: udp
---- !u!4 &250358823
+--- !u!4 &569101617
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 250358820}
+  m_GameObject: {fileID: 569101614}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -186,7 +186,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &311333421
+--- !u!1 &842113683
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -194,8 +194,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 311333423}
-  - component: {fileID: 311333422}
+  - component: {fileID: 842113685}
+  - component: {fileID: 842113684}
   m_Layer: 0
   m_Name: TestMultiplayerEventSystemBootstrap
   m_TagString: Untagged
@@ -203,25 +203,25 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &311333422
+--- !u!114 &842113684
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 311333421}
+  m_GameObject: {fileID: 842113683}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 560716d662d67874ebf8fad9fce30b77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: TestMultiplayer.Runtime::TestMultiplayer.UI.TestMultiplayerEventSystemBootstrap
---- !u!4 &311333423
+--- !u!4 &842113685
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 311333421}
+  m_GameObject: {fileID: 842113683}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -230,7 +230,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &811954877
+--- !u!1 &1709145805
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -238,8 +238,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 811954879}
-  - component: {fileID: 811954878}
+  - component: {fileID: 1709145807}
+  - component: {fileID: 1709145806}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -247,13 +247,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &811954878
+--- !u!20 &1709145806
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 811954877}
+  m_GameObject: {fileID: 1709145805}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -298,13 +298,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &811954879
+--- !u!4 &1709145807
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 811954877}
+  m_GameObject: {fileID: 1709145805}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
@@ -317,6 +317,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 811954879}
-  - {fileID: 311333423}
-  - {fileID: 250358823}
+  - {fileID: 1709145807}
+  - {fileID: 842113685}
+  - {fileID: 569101617}

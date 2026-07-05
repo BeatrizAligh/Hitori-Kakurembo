@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace TestMultiplayer.UI
 {
@@ -13,37 +14,37 @@ namespace TestMultiplayer.UI
         public GameObject connectedPlayersHud;
 
         [Header("Main Window")]
-        public Text mainProfileText;
+        public TMP_Text mainProfileText;
         public Button openSessionButton;
         public Button openCustomizationButton;
-        public Text mainStatusText;
+        public TMP_Text mainStatusText;
 
         [Header("Session Window")]
-        public InputField sessionPlayerNameInput;
-        public InputField joinCodeInput;
+        public TMP_InputField sessionPlayerNameInput;
+        public TMP_InputField joinCodeInput;
         public Button createLobbyButton;
         public Button joinLobbyButton;
         public Button sessionBackButton;
-        public Text sessionStatusText;
+        public TMP_Text sessionStatusText;
 
         [Header("Customization Window")]
-        public InputField customizationPlayerNameInput;
-        public InputField headInput;
-        public InputField hairInput;
-        public InputField upperBodyInput;
-        public InputField lowerBodyInput;
-        public InputField eyesInput;
+        public TMP_InputField customizationPlayerNameInput;
+        public TMP_InputField headInput;
+        public TMP_InputField hairInput;
+        public TMP_InputField upperBodyInput;
+        public TMP_InputField lowerBodyInput;
+        public TMP_InputField eyesInput;
         public Button saveCustomizationButton;
         public Button customizationBackButton;
 
         [Header("Lobby Window")]
-        public Text lobbyStateText;
+        public TMP_Text lobbyStateText;
         public Button readyButton;
         public Button startGameButton;
         public Button leaveButton;
 
         [Header("Connected Players HUD")]
-        public Text connectedPlayersTitleText;
+        public TMP_Text connectedPlayersTitleText;
         public Transform connectedPlayersRowsRoot;
         public TestMultiplayerHudPlayerRow connectedPlayerRowPrefab;
     }

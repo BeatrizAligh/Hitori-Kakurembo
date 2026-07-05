@@ -1,6 +1,7 @@
 using System.Text;
 using TestMultiplayer.Data;
 using TestMultiplayer.Networking;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -441,7 +442,7 @@ namespace TestMultiplayer.UI
             }
         }
 
-        private static void SetInput(InputField input, string value)
+        private static void SetInput(TMP_InputField input, string value)
         {
             if (input != null)
             {
@@ -449,7 +450,7 @@ namespace TestMultiplayer.UI
             }
         }
 
-        private static int ReadInt(InputField input, int fallback)
+        private static int ReadInt(TMP_InputField input, int fallback)
         {
             return input != null && int.TryParse(input.text, out int parsed)
                 ? Mathf.Max(0, parsed)
