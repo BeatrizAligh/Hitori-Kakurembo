@@ -20,5 +20,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/TestMultiplayer/Scenes/TestMultiplayerMainMenu.unity
+    guid: 633bf9ad235333047816e1368e11eb3e
+  - enabled: 1
+    path: Assets/TestMultiplayer/Scenes/TestMultiplayerLobby.unity
+    guid: 2f2b28a46671dbc4ebd99145e8d27317
+  - enabled: 1
+    path: Assets/TestMultiplayer/Scenes/TestMultiplayerGame.unity
+    guid: 92fce874928085c4e840788ace34ab79
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -5,16 +5,24 @@ using UnityEngine;
 namespace HitoriKakurembo.Core
 {
     /// <summary>
-    /// Garantiza que la infraestructura minima del prototipo exista desde cualquier escena sin requerir configuracion manual previa.
+    /// Bootstrap legado del prototipo Hitori Kakurembo.
+    /// Queda desactivado por defecto porque el flujo multiplayer modular vive en Assets/TestMultiplayer.
     /// </summary>
+    [System.Obsolete("Legacy bootstrap desactivado por defecto. Usa TestMultiplayer o define HITORI_KAKUREMBO_LEGACY_BOOTSTRAP para reactivarlo.")]
     public static class ProjectBootstrap
     {
         /// <summary>
         /// Crea el contenedor persistente de sistemas antes de que Unity cargue la primera escena jugable.
+        /// Para reactivar este flujo viejo agrega HITORI_KAKUREMBO_LEGACY_BOOTSTRAP a Scripting Define Symbols.
         /// </summary>
+#if HITORI_KAKUREMBO_LEGACY_BOOTSTRAP
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+#endif
         private static void Initialize()
         {
+#if !HITORI_KAKUREMBO_LEGACY_BOOTSTRAP
+            return;
+#else
             bool hasGameManager = Object.FindAnyObjectByType<GameManager>() != null;
             bool hasSceneLoader = Object.FindAnyObjectByType<SceneLoader>() != null;
             bool hasRelaySessionManager = Object.FindAnyObjectByType<RelaySessionManager>() != null;
@@ -56,6 +64,7 @@ namespace HitoriKakurembo.Core
             }
 
             bootstrapRoot.SetActive(true);
+#endif
         }
     }
 }
