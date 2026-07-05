@@ -29,5 +29,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/TestMultiplayer/Scenes/TestMultiplayerGame.unity
     guid: 92fce874928085c4e840788ace34ab79
+  - enabled: 1
+    path: Assets/HitoriMultiplayer/Scenes/HitoriMultiplayerMainMenu.unity
+    guid: ee19ce0242d661a479908762a052c227
+  - enabled: 1
+    path: Assets/HitoriMultiplayer/Scenes/HitoriMultiplayerLobby.unity
+    guid: 53938178cf33c1a4a96b82a9a26c468a
+  - enabled: 1
+    path: Assets/HitoriMultiplayer/Scenes/HitoriMultiplayerGame.unity
+    guid: a043d72f31fae474badc866e6f3f23d4
   m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
