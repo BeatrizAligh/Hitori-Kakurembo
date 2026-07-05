@@ -25,12 +25,26 @@ namespace TestMultiplayer.UI
 
         public static void EnsureEventSystem()
         {
-            if (Object.FindAnyObjectByType<EventSystem>() != null)
+            EnsurePersistentEventSystem();
+        }
+
+        public static void EnsurePersistentEventSystem()
+        {
+            EventSystem existingEventSystem = Object.FindAnyObjectByType<EventSystem>();
+
+            if (existingEventSystem != null)
             {
+                if (existingEventSystem.transform.parent != null)
+                {
+                    existingEventSystem.transform.SetParent(null);
+                }
+
+                Object.DontDestroyOnLoad(existingEventSystem.gameObject);
                 return;
             }
 
-            new GameObject("TestMultiplayerEventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            GameObject eventSystemObject = new GameObject("TestMultiplayerEventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+            Object.DontDestroyOnLoad(eventSystemObject);
         }
 
         public static RectTransform CreatePanel(string name, Transform parent)

@@ -5,6 +5,7 @@ using UnityEngine.UI;
 
 namespace TestMultiplayer.UI
 {
+    [System.Obsolete("Fallback legacy. Usa TestMultiplayerUIRoot.prefab con TestMultiplayerMainMenuUI.")]
     public class TestMultiplayerLobbyUI : MonoBehaviour
     {
         [SerializeField] private TestMultiplayerSessionManager sessionManager;
